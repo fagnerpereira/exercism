@@ -1,5 +1,5 @@
 class Dice
-  SIDES = [1, 2, 3, 4, 5, 6]
+  SIDES = [1, 2, 3, 4, 5, 6].freeze
 
   def self.roll
     SIDES.sample
@@ -7,15 +7,14 @@ class Dice
 end
 
 class DndCharacter
-  attr_reader :strength, :dexterity, :constitution, :intelligence, :wisdom, :charisma
+  ATTRIBUTES = %i[strength dexterity constitution intelligence wisdom charisma].freeze
+
+  attr_reader *ATTRIBUTES
 
   def initialize
-    @strength = generate_score
-    @dexterity = generate_score
-    @constitution = generate_score
-    @intelligence = generate_score
-    @wisdom = generate_score
-    @charisma = generate_score
+    ATTRIBUTES.each do |attribute|
+      instance_variable_set("@#{attribute}", generate_score)
+    end
   end
 
   def hitpoints
@@ -23,13 +22,8 @@ class DndCharacter
   end
 
   def generate_score
-    score = []
-    score << Dice.roll
-    score << Dice.roll
-    score << Dice.roll
-    score << Dice.roll
-    min = score.min
-    score.sum - min
+    rolls = Array.new(4) { Dice.roll }
+    rolls.sum - rolls.min
   end
 
   def self.modifier(score)
