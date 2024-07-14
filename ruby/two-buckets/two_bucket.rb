@@ -1,9 +1,45 @@
+class Bucket
+  attr_accessor :capacity, :usage
+
+  def initialize(capacity)
+    @capacity = capacity
+    @usage = 0
+  end
+
+  def fillup!
+    @usage = @capacity
+  end
+
+  def clear!
+    @usage = 0
+  end
+
+  def pour!(other)
+    amount = [@usage, other.free].min
+
+    other.usage += amount
+    @usage -= amount
+  end
+
+  def free
+    capacity - usage
+  end
+
+  def empty?
+    usage.zero?
+  end
+
+  def full?
+    usage == capacity
+  end
+end
+
 class TwoBucket
   attr_reader :moves
 
   def initialize(bucket_one_size, bucket_two_size, goal, start_bucket)
-    @bucket_one = { capacity: bucket_one_size, usage: 0, free: bucket_one_size }
-    @bucket_two = { capacity: bucket_two_size, usage: 0, free: bucket_two_size }
+    @bucket_one = Bucket.new(bucket_one_size)
+    @bucket_two = Bucket.new(bucket_two_size)
     @goal = goal
     @start_bucket = start_bucket
     @moves = 0
@@ -12,31 +48,32 @@ class TwoBucket
   end
 
   def run
-    return if @bucket_one[:usage] == @goal || @bucket_two[:usage] == @goal
+    return if @bucket_one.usage == @goal || @bucket_two.usage == @goal
 
+    @moves += 1
     if @start_bucket == 'one'
-      if @bucket_one[:usage].zero?
-        fillup_bucket_one
-      elsif @bucket_two[:free].positive?
-        if @goal == @bucket_two[:capacity]
-          fillup_bucket_two
+      if @bucket_one.empty?
+        @bucket_one.fillup!
+      elsif @bucket_two.free.positive?
+        if @goal == @bucket_two.capacity
+          @bucket_two.fillup!
         else
-          pour_bucket_one_to_bucket_two
+          @bucket_one.pour!(@bucket_two)
         end
       else
-        clear_bucket_two
+        @bucket_two.clear!
       end
     else
-      if @bucket_two[:usage].zero?
-        fillup_bucket_two
-      elsif @bucket_one[:free].positive?
-        if @goal == @bucket_one[:capacity]
-          fillup_bucket_one
+      if @bucket_two.empty?
+        @bucket_two.fillup!
+      elsif @bucket_one.free.positive?
+        if @goal == @bucket_one.capacity
+          @bucket_one.fillup!
         else
-          pour_bucket_two_to_bucket_one
+          @bucket_two.pour!(@bucket_one)
         end
       else
-        clear_bucket_one
+        @bucket_one.clear!
       end
     end
 
@@ -44,54 +81,10 @@ class TwoBucket
   end
 
   def goal_bucket
-    @goal == @bucket_one[:usage] ? 'one' : 'two'
+    @goal == @bucket_one.usage ? 'one' : 'two'
   end
 
   def other_bucket
-    @goal == @bucket_one[:usage] ? @bucket_two[:usage] : @bucket_one[:usage]
-  end
-
-  def pour_bucket_one_to_bucket_two
-    amount = [@bucket_one[:usage], @bucket_two[:free]].min
-
-    @bucket_two[:usage] += amount
-    @bucket_two[:free] -= amount
-    @bucket_one[:usage] -= amount
-    @bucket_one[:free] += amount
-    @moves += 1
-  end
-
-  def pour_bucket_two_to_bucket_one
-    amount = [@bucket_two[:usage], @bucket_one[:free]].min
-
-    @bucket_one[:usage] += amount
-    @bucket_one[:free] -= amount
-    @bucket_two[:usage] -= amount
-    @bucket_two[:free] += amount
-    @moves += 1
-  end
-
-  def fillup_bucket_one
-    @bucket_one[:usage] = @bucket_one[:capacity]
-    @bucket_one[:free] = 0
-    @moves += 1
-  end
-
-  def fillup_bucket_two
-    @bucket_two[:usage] = @bucket_two[:capacity]
-    @bucket_two[:free] = 0
-    @moves += 1
-  end
-
-  def clear_bucket_one
-    @bucket_one[:usage] = 0
-    @bucket_one[:free] = @bucket_one[:capacity]
-    @moves += 1
-  end
-
-  def clear_bucket_two
-    @bucket_two[:usage] = 0
-    @bucket_two[:free] = @bucket_two[:capacity]
-    @moves += 1
+    @goal == @bucket_one.usage ? @bucket_two.usage : @bucket_one.usage
   end
 end
